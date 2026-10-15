@@ -1,0 +1,151 @@
+# ===========================
+# Python
+# ===========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# ===========================
+# Virtual Environment
+# ===========================
+env/
+venv/
+.venv/
+.env312/
+ENV/
+env.bak/
+venv.bak/
+
+# ===========================
+# Django
+# ===========================
+*.log
+db.sqlite3
+db.sqlite3-journal
+
+# Local settings
+local_settings.py
+
+# ===========================
+# Environment Variables
+# ===========================
+.env
+.env.*
+.env.local
+.env.development
+.env.production
+
+# ===========================
+# Migrations (Optional)
+# Uncomment if you don't want to commit migrations
+# */migrations/*
+# !*/migrations/__init__.py
+
+# ===========================
+# VS Code / JetBrains
+# ===========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ===========================
+# Node.js / Tailwind
+# ===========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Tailwind build output
+static/css/output.css
+
+# ===========================
+# Build
+# ===========================
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ===========================
+# Testing
+# ===========================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# ===========================
+# Type Checkers
+# ===========================
+.mypy_cache/
+.pyre/
+.pytype/
+
+# ===========================
+# Jupyter
+# ===========================
+.ipynb_checkpoints/
+
+# ===========================
+# Celery
+# ===========================
+celerybeat-schedule
+celerybeat.pid
+
+# ===========================
+# Docker
+# ===========================
+*.pid
+docker-compose.override.yml
+
+# ===========================
+# Operating System
+# ===========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===========================
+# Secrets
+# ===========================
+*.pem
+*.key
+*.crt
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+
+
+# Ignore pycache inside migrations
+**/migrations/__pycache__/
+
+# Ignore all __pycache__ folders recursively
+**/__pycache__/
+
+
+# Runtime state and dependency markers
+.server_state.json
+.deps_installed
+
+# SQLite temporary files
+*.sqlite3-shm
+*.sqlite3-wal
+
+# Additional Python environments
+.python-version
+
+# Local logs and temporary files
+logs/
+tmp/
+temp/
+# Archives
+*.zip

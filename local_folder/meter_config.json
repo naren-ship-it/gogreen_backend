@@ -1,0 +1,11 @@
+{
+  "baudrate": 19200,
+  "meters": {
+    "Meter1": 1,
+    "Meter2": 2,
+    "Meter3": 3,
+    "Meter4": 67
+  },
+  "poll_interval": 16,
+  "port": "COM1"
+}
