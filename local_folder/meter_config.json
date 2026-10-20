@@ -1,0 +1,11 @@
+{
+    "port": "COM1",
+    "baudrate": 4800,
+    "poll_interval": 1.0,
+    "meters": {
+        "Meter1": 1,
+        "Meter2": 2,
+        "Meter3": 3,
+        "Meter4": 56
+    }
+}

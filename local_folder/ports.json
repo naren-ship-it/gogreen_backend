@@ -1,0 +1,16 @@
+{
+    "ports": [
+        {
+            "type": "fastapi",
+            "port": "COMSS"
+        },
+        {
+            "type": "out",
+            "port": "COMSS"
+        },
+        {
+            "type": "IN",
+            "port": "COMSS"
+        }
+    ]
+}

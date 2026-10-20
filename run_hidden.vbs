@@ -1,0 +1,1 @@
+CreateObject("Wscript.Shell").Run """D:\Tamil Vanan\go green be\start_django.bat""", 0, False
