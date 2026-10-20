@@ -31,7 +31,6 @@ def create_default_superuser(sender, **kwargs):
     from django.contrib.auth import get_user_model
 
     User = get_user_model()
-
     username = "admin"
     password = "Admin@123"
 

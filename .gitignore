@@ -86,7 +86,11 @@ htmlcov/
 .mypy_cache/
 .pyre/
 .pytype/
+<<<<<<< HEAD
 
+=======
+s
+>>>>>>> feature/window_manager
 # ===========================
 # Jupyter
 # ===========================
@@ -123,12 +127,22 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+<<<<<<< HEAD
 
+=======
+# Ignore all Django migration files
+**/migrations/*.py
+**/migrations/*.pyc
+
+# Keep __init__.py inside migrations
+!**/migrations/__init__.py
+>>>>>>> feature/window_manager
 
 # Ignore pycache inside migrations
 **/migrations/__pycache__/
 
 # Ignore all __pycache__ folders recursively
+<<<<<<< HEAD
 **/__pycache__/
 
 
@@ -149,3 +163,6 @@ tmp/
 temp/
 # Archives
 *.zip
+=======
+**/__pycache__/
+>>>>>>> feature/window_manager

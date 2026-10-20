@@ -309,3 +309,38 @@ class ParticipantAPIView(APIView):
                 "status": False,
                 "message": str(e),
             })
+            })
+            
+            
+            
+
+from pathlib import Path
+
+from django.conf import settings
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+
+
+LOG_FILE = Path(settings.BASE_DIR) / "backend-terminal.log"
+
+
+@require_GET
+def backend_terminal_logs(request):
+    if not LOG_FILE.is_file():
+        return JsonResponse({
+            "lines": [],
+            "error": "Log file not found. Start Uvicorn using the PowerShell launcher.",
+        })
+
+    try:
+        with LOG_FILE.open("r", encoding="utf-8", errors="replace") as file:
+            lines = file.readlines()
+
+        return JsonResponse({
+            "lines": [line.rstrip("\r\n") for line in lines[-500:]],
+        })
+    except OSError:
+        return JsonResponse({
+            "lines": [],
+            "error": "Unable to read backend log file.",
+        }, status=500)

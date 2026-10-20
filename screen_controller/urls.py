@@ -10,4 +10,6 @@ urlpatterns = [
     path("screen-position/", api.WindoePositionalAPI.as_view(), name="set_current_screen"),
     path("participent-cycle/",api.ParticipentCycleAPIView.as_view(),name="participent_cycle"),
     path("active-participent/",api.SelectedCyclesAPI.as_view(),name="participent_cycle"),
+    path("windows/", api.WindowsAPIView.as_view(), name="windows-list"),
+    path("windows/<int:pk>/", api.WindowsAPIView.as_view(), name="windows-detail"),
 ]

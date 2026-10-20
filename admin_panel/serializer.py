@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from core.models import Cycle, Participent, ParticipentCycle, AppTheme,ParticipantCyclingDuration, CycleRideSession,CycleRideSegment
+from core.models import Cycle, Participent, ParticipentCycle, AppTheme,ParticipantCyclingDuration
 from django.utils import timezone
 from datetime import timedelta
 
@@ -35,6 +36,11 @@ class ParticipentCycleSerializer(serializers.ModelSerializer):
         source="cycle.controller_no",
         read_only=True,
     )
+class ParticipentCycleSerializer(serializers.ModelSerializer):
+    participent_name = serializers.CharField(source="participent.name", read_only=True)
+    other_participant_detail = serializers.SerializerMethodField()
+    cycle_no = serializers.CharField(source="cycle.cycle_no", read_only=True)
+    controller_no = serializers.CharField(source="cycle.controller_no", read_only=True)
 
     class Meta:
         model = ParticipentCycle
@@ -129,6 +135,7 @@ class ParticipentCycleSerializer(serializers.ModelSerializer):
 
         return details
 
+        return [{"id": p.id, "name": p.name} for p in obj.other_participant.all()]
 
 
 

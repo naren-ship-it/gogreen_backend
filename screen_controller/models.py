@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.forms import IntegerField
 
 
 class Screen(models.Model):
@@ -14,24 +14,21 @@ class Screen(models.Model):
 
     is_live = models.BooleanField(default=False)
 
-    # Window Position
-    
-
     class Meta:
         ordering = ["id"]
 
     def __str__(self):
-        return self.name
+        return f'{self.name} {self.id}'
+
 
 class ScreenPosition(models.Model):
+    name = models.CharField(max_length=200, default="")
     x = models.IntegerField(default=0)
     y = models.IntegerField(default=0)
 
-    # Window Size
     width = models.IntegerField(default=1200)
     height = models.IntegerField(default=900)
 
-    # Window Behaviour
     fullscreen = models.BooleanField(default=False)
     always_on_top = models.BooleanField(default=False)
     resizable = models.BooleanField(default=True)
@@ -39,12 +36,33 @@ class ScreenPosition(models.Model):
     minimizable = models.BooleanField(default=True)
     maximizable = models.BooleanField(default=True)
 
-    # Visibility
     visible = models.BooleanField(default=True)
 
-    # Menu
     menu_bar_visible = models.BooleanField(default=False)
     auto_hide_menu_bar = models.BooleanField(default=True)
 
-    # Appearance
     opacity = models.FloatField(default=1.0)
+
+    def __str__(self):
+        return self.name or f"Position {self.id}"
+
+
+class Windows(models.Model):
+    name = models.CharField(max_length=200)
+    position = models.ForeignKey(
+        ScreenPosition,
+        on_delete=models.CASCADE,
+        related_name="windows",
+    )
+    activee_screen = models.ForeignKey(
+        Screen,
+        on_delete=models.CASCADE,
+        related_name="windows",
+    )
+    is_active = models.BooleanField(default=True)
+    pid = models.IntegerField(default=0)
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"{self.name}  {self.id}"

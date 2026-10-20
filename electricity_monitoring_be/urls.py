@@ -40,7 +40,12 @@ urlpatterns = [
     path('api/participants-data/', api.ParticipantAPIView.as_view(), name='participants-data'),
     path("api/admin/", include("admin_panel.urls")),
     path('export/',include('excel_report.urls')),
-    path('fm/',include('file_manager.urls'))
+    path('fm/',include('file_manager.urls')),
+    path(
+        "backend-terminal-logs/",
+        api.backend_terminal_logs,
+        name="backend-terminal-logs",
+    ),
 
 ]
 

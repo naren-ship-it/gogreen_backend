@@ -9,6 +9,10 @@ import base64
 from django.core.files.base import ContentFile
 from django.core.files import File
 from urllib.parse import urlparse
+<<<<<<< HEAD
+=======
+from utils.is_receiver_running import is_pid_running
+>>>>>>> feature/window_manager
 
 CAMEL_TO_SNAKE_FIELD_MAP = {
         "x": "x",
@@ -91,9 +95,19 @@ class ScreenConsumer(AsyncWebsocketConsumer):
         # Only admin can change live screen / trigger these actions
         if self.role != "admin":
             return
+<<<<<<< HEAD
 
         if action == "set_live_screen":
             await self.handle_set_live_screen(data)
+=======
+        
+
+        if action == "set_live_screen":
+            await self.handle_set_live_screen(data)
+            
+        elif action == "create_window":
+            await self.handle_create_window(data)
+>>>>>>> feature/window_manager
 
         elif action == "window_update":
             await self.handle_window_update(data)
@@ -130,7 +144,34 @@ class ScreenConsumer(AsyncWebsocketConsumer):
                         }
                     )
                 )
+<<<<<<< HEAD
 
+=======
+        
+        elif action == "toggle_online":
+            
+            print(f"window id {data['data']['id']}")
+            window = await self.getWindow(data['data']['id'])
+            print(window)
+            await self.handle_active(data['data']['id'],data['data']['is_active'])
+            if data['data']['is_app_on']:
+                try:
+                    print("sending data ")
+                    await self.channel_layer.group_send(
+                        "screen_client",
+                        {
+                            "type": "show_window",
+                            "data": {**data["data"], "pid": window.pid},
+                        }
+                    )
+                except Exception as e:
+                    
+                    print(e)
+            
+            
+                
+            
+>>>>>>> feature/window_manager
     # ------------------------------------------------------------
     # Action handlers (kept separate from receive() for readability)
     # ------------------------------------------------------------
@@ -164,6 +205,21 @@ class ScreenConsumer(AsyncWebsocketConsumer):
         # Notify admins too (no init_data needed there)
         await self.channel_layer.group_send("screen_admin", base_payload)
 
+<<<<<<< HEAD
+=======
+    async def handle_create_window(self,data):
+        try:
+            await self.channel_layer.group_send(
+                "screen_client",
+                {
+                    "type":"add_window",
+                    "data":data
+                }
+            )
+        except Exception as e:
+            print(e)
+        
+>>>>>>> feature/window_manager
     async def handle_window_update(self, data):
         try:
             properties = data.get("properties", {})
@@ -282,6 +338,23 @@ class ScreenConsumer(AsyncWebsocketConsumer):
                 }
             )
         )
+<<<<<<< HEAD
+=======
+    async def add_window(self, event):
+            await self.send(
+                text_data=json.dumps({
+                    "type": "add_window",
+                    "data": event.get("data"),
+                })
+            )
+    async def show_window(self, event):
+            await self.send(
+                text_data=json.dumps({
+                    "type": "show_window",
+                    "data": event.get("data"),
+                })
+            )
+>>>>>>> feature/window_manager
 
     async def free_text_updated(self, event):
         await self.send(
@@ -596,4 +669,28 @@ class ScreenConsumer(AsyncWebsocketConsumer):
             return AppTheme.get_active().to_payload()
         except Exception as e:
             print(f"⚠ getActiveThemePayload failed: {e}")
+<<<<<<< HEAD
             return None
+=======
+            return None
+        
+    @database_sync_to_async
+    def getWindow(self,id):
+        try:
+            from screen_controller.models import Windows
+            window = Windows.objects.get(id=id)
+            return window
+        except Exception as e:
+            print(f"Error in the getting window {e}")
+            
+    @database_sync_to_async
+    def handle_active(self,id,status):
+        try:
+            from screen_controller.models import Windows
+            window = Windows.objects.get(id=id)
+            window.is_active=status
+            window.save()
+        except Exception as e:
+            print(f"Error in the getting window {e}")
+        
+>>>>>>> feature/window_manager
