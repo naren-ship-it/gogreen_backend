@@ -1,6 +1,6 @@
 
 import json
-
+import traceback
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.db import transaction
@@ -97,11 +97,26 @@ class WindowConsumer(AsyncWebsocketConsumer):
                 self.channel_name,
             )
 
+        # If this was the client whose app process we were tracking,
+        # clear the pid so the screen is no longer considered "active".
+        if getattr(self, "role", None) == self.CLIENT_ROLE:
+            await self.clear_pid(getattr(self, "window_id", None))
+
         print(
             f"WebSocket disconnected: role={getattr(self, 'role', None)}, "
             f"window={getattr(self, 'window_id', None)}, "
             f"code={close_code}"
         )
+
+    @database_sync_to_async
+    def clear_pid(self, window_id):
+        if window_id is None:
+            return
+        try:
+            Windows.objects.filter(id=window_id).update(pid=0)
+        except Exception as e:
+            print("Error while clearing pid on disconnect")
+            print(e)
 
     # --------------------------------------------------
     # RECEIVE MESSAGES
@@ -372,7 +387,7 @@ class WindowConsumer(AsyncWebsocketConsumer):
 
     async def handle_create_window(self, data):
         try:
-            window = await self.create_window(
+            result = await self.create_window(
                 screen_id=self.screen_id,
                 width=data.get("width", 1200),
                 height=data.get("height", 900),
@@ -380,11 +395,25 @@ class WindowConsumer(AsyncWebsocketConsumer):
                 y=data.get("y", 0),
             )
 
-            if window is None:
-                await self.send_error(
-                    f"Screen {self.screen_id} not found."
-                )
+            if result["status"] == "screen_not_found":
+                await self.send_error(f"Screen {self.screen_id} not found.")
                 return
+
+            if result["status"] == "already_active":
+                await self.send_json({
+                    "type": "window_already_active",
+                    "window_id": self.window_id,
+                    "screen_id": self.screen_id,
+                    "existing_window": result["window"],
+                    "message": (
+                        "This screen already has an active window. "
+                        "Close it before creating a new one."
+                    ),
+                })
+                return
+
+            # status == "created"
+            window = result["window"]
 
             await self.send_json({
                 "type": "window_created",
@@ -414,14 +443,7 @@ class WindowConsumer(AsyncWebsocketConsumer):
             await self.send_error("Unable to create window.")
 
     @database_sync_to_async
-    def create_window(
-        self,
-        screen_id,
-        width=1200,
-        height=900,
-        x=0,
-        y=0,
-    ):
+    def create_window(self, screen_id, width=1200, height=900, x=0, y=0):
         width = self._valid_dimension(width)
         height = self._valid_dimension(height)
         x = self._valid_coordinate(x)
@@ -431,29 +453,32 @@ class WindowConsumer(AsyncWebsocketConsumer):
             from .models import Screen
 
             screen = Screen.objects.filter(pk=screen_id).first()
-
             if screen is None:
-                return None
+                return {"status": "screen_not_found"}
+
+            existing = (
+                Windows.objects
+                .select_related("position", "activee_screen")
+                .filter(activee_screen_id=screen_id)
+                .exclude(pid=0)
+                .first()
+            )
+            if existing is not None:
+                return {
+                    "status": "already_active",
+                    "window": self.serialize_window(existing),
+                }
 
             position = ScreenPosition.objects.create(
-                name="Window position",
-                width=width,
-                height=height,
-                x=x,
-                y=y,
+                name="Window position", width=width, height=height, x=x, y=y,
             )
-
             window = Windows.objects.create(
-                name="New Window",
-                position=position,
-                activee_screen=screen,
+                name="New Window", position=position, activee_screen=screen,
             )
-
             window.name = f"Window {window.pk}"
             window.save(update_fields=["name"])
 
-            return self.serialize_window(window)
-
+            return {"status": "created", "window": self.serialize_window(window)}
     # --------------------------------------------------
     # GET WINDOWS
     # --------------------------------------------------

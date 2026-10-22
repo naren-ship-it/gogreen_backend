@@ -17,27 +17,28 @@ class ParticipentSerializer(serializers.ModelSerializer):
 
 
 
-class ParticipentCycleSerializer(serializers.ModelSerializer):
-    participent_name = serializers.CharField(
-        source="participent.name",
-        read_only=True,
-    )
-    active_participant_name = serializers.CharField(
-        source="active_participant.name",
-        read_only=True,
-        allow_null=True,
-    )
-    other_participant_detail = serializers.SerializerMethodField()
-    cycle_no = serializers.CharField(
-        source="cycle.cycle_no",
-        read_only=True,
-    )
-    controller_no = serializers.CharField(
-        source="cycle.controller_no",
-        read_only=True,
-    )
+# class ParticipentCycleSerializer(serializers.ModelSerializer):
+#     participent_name = serializers.CharField(
+#         source="participent.name",
+#         read_only=True,
+#     )
+#     active_participant_name = serializers.CharField(
+#         source="active_participant.name",
+#         read_only=True,
+#         allow_null=True,
+#     )
+#     other_participant_detail = serializers.SerializerMethodField()
+#     cycle_no = serializers.CharField(
+#         source="cycle.cycle_no",
+#         read_only=True,
+#     )
+#     controller_no = serializers.CharField(
+#         source="cycle.controller_no",
+#         read_only=True,
+#     )
 class ParticipentCycleSerializer(serializers.ModelSerializer):
     participent_name = serializers.CharField(source="participent.name", read_only=True)
+    active_participant_name = serializers.CharField(source="active_participant.name",read_only=True,allow_null=True,)
     other_participant_detail = serializers.SerializerMethodField()
     cycle_no = serializers.CharField(source="cycle.cycle_no", read_only=True)
     controller_no = serializers.CharField(source="cycle.controller_no", read_only=True)

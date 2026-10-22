@@ -38,3 +38,4 @@ async def websocket_app(scope, receive, send):
 
         elif event['type'] == 'websocket.disconnect':
             break
+        

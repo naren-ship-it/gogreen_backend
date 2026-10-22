@@ -309,7 +309,7 @@ class ParticipantAPIView(APIView):
                 "status": False,
                 "message": str(e),
             })
-            })
+        
             
             
             

@@ -2481,13 +2481,10 @@ origins = [
 
     "http://127.0.0.1:5173",
 
-<<<<<<< HEAD
     # Tauri frontend
     "http://localhost:1420",
     "http://127.0.0.1:1420",
 
-=======
->>>>>>> feature/window_manager
 ]
 
 

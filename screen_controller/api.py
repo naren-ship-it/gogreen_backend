@@ -1,19 +1,13 @@
 from rest_framework.decorators import APIView
 from rest_framework.response import Response
 from rest_framework import status
-<<<<<<< HEAD
-=======
 from utils.close_receiver import close_window_by_pid
->>>>>>> feature/window_manager
 from .models import *
 from .serializer import *
 from core.models import  *
 from rest_framework.permissions import AllowAny
-<<<<<<< HEAD
-=======
 from django.forms import ValidationError
 from django.template.context_processors import request
->>>>>>> feature/window_manager
 
 
 class WindoePositionalAPI(APIView):
@@ -99,9 +93,7 @@ class SelectedCyclesAPI(APIView):
             print(e)
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-<<<<<<< HEAD
         
-=======
         
         
         
@@ -196,6 +188,33 @@ class WindowsAPIView(APIView):
             return Response(
                 {"activee_screen": "Invalid screen ID."},
                 status=status.HTTP_400_BAD_REQUEST,
+            )
+            
+        # Block creating a new window if this screen already has one
+        # with a live client process attached (pid != 0).
+        existing_active = (
+            Windows.objects
+            .select_related("position", "activee_screen")
+            .filter(activee_screen_id=screen.pk)
+            .exclude(pid=0)
+            .first()
+        )
+        if existing_active is not None:
+            return Response(
+                {
+                    "error": (
+                        f"Screen '{screen.name}' already has an active "
+                        f"window (window_id={existing_active.pk}, "
+                        f"pid={existing_active.pid}). Close it before "
+                        "creating a new one."
+                    ),
+                    "existing_window": {
+                        "id": existing_active.pk,
+                        "name": existing_active.name,
+                        "pid": existing_active.pid,
+                    },
+                },
+                status=status.HTTP_409_CONFLICT,
             )
 
         allowed_position_fields = {
@@ -339,6 +358,7 @@ class WindowsAPIView(APIView):
         )
 
     # DELETE: Delete a window
+
     def delete(self, request, pk):
         print(f"[DEBUG] WindowsAPIView DELETE called for ID: {pk}")
 
@@ -352,18 +372,39 @@ class WindowsAPIView(APIView):
 
         window_name = window.name
         window_id = window.pk
+        pid = window.pid
+
+        close_result = None
+
+        # If this window has a live process attached, try to close it
+        # before removing the DB record, so the screen doesn't end up
+        # with an orphaned app still open.
+        if pid:
+            close_result = close_window_by_pid(pid)
+            print(
+                f"[DEBUG] close_window_by_pid({pid}) -> {close_result}"
+            )
+
+            if not close_result["success"]:
+                # Process couldn't be closed cleanly. Still proceed with
+                # deleting the DB record, but let the caller know the
+                # app may still be running on screen.
+                print(
+                    f"[DEBUG] Window {window_id} deleted but process "
+                    f"{pid} close failed: {close_result['message']}"
+                )
 
         window.delete()
 
         print(
             "[DEBUG] Window deleted successfully: "
-            f"ID={window_id}, Name={window_name}"
+            f"ID={window_id}, Name={window_name}, pid={pid}"
         )
 
-        return Response(
-            {"message": "Window deleted successfully"},
-            status=status.HTTP_200_OK,
-        )
+        response_data = {"message": "Window deleted successfully"}
+
+        if close_result is not None:
+            response_data["process_close"] = close_result
+
+        return Response(response_data, status=status.HTTP_200_OK)
         
-        
->>>>>>> feature/window_manager

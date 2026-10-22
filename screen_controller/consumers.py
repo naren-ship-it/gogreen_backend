@@ -9,10 +9,8 @@ import base64
 from django.core.files.base import ContentFile
 from django.core.files import File
 from urllib.parse import urlparse
-<<<<<<< HEAD
-=======
 from utils.is_receiver_running import is_pid_running
->>>>>>> feature/window_manager
+
 
 CAMEL_TO_SNAKE_FIELD_MAP = {
         "x": "x",
@@ -42,47 +40,70 @@ CAMEL_TO_SNAKE_FIELD_MAP = {
 class ScreenConsumer(AsyncWebsocketConsumer):
     connected = {}
 
+
     async def connect(self):
         self.role = self.scope["url_route"]["kwargs"]["role"]
-        self.connected.setdefault(self.role, set())
-        self.connected[self.role].add(self.channel_name)
-        # screen_admin or screen_client
         self.group_name = f"screen_{self.role}"
+        self._group_added = False
 
-        await self.channel_layer.group_add(
-            self.group_name,
-            self.channel_name,
-        )
+        try:
+            await self.channel_layer.group_add(
+                self.group_name,
+                self.channel_name,
+            )
+            self._group_added = True
 
-        await self.accept()
+            await self.accept()
 
-        print(f"{self.role} connected")
+            print(f"{self.role} connected")
 
-        # Send the current active theme immediately on connect so the
-        # screen/admin doesn't have to wait for the next theme_updated
-        # broadcast to render the right colors (matches what
-        # /api/get_active_theme/ would return on a page refresh).
-        theme_payload = await self.getActiveThemePayload()
-        if theme_payload is not None:
-            await self.send(
-                text_data=json.dumps(
-                    {
+            # Load the theme after accepting the connection.
+            theme_payload = await self.getActiveThemePayload()
+
+            if theme_payload is not None:
+                await self.send(
+                    text_data=json.dumps({
                         "type": "theme_updated",
                         "data": theme_payload,
-                    }
+                    })
                 )
-            )
 
+        except Exception as exc:
+            print(f"WebSocket connect error ({self.role}): {exc}")
+
+            if self._group_added:
+                try:
+                    await self.channel_layer.group_discard(
+                        self.group_name,
+                        self.channel_name,
+                    )
+                except Exception as cleanup_exc:
+                    print(f"WebSocket cleanup error: {cleanup_exc}")
+
+            # Do not attempt to accept the connection a second time.
+            raise
 
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(
-            self.group_name,
-            self.channel_name,
-        )
-        self.connected.get(self.role, set()).discard(self.channel_name)
+        if getattr(self, "_group_added", False):
+            try:
+                await self.channel_layer.group_discard(
+                    self.group_name,
+                    self.channel_name,
+                )
+            except Exception as exc:
+                print(f"WebSocket disconnect cleanup error: {exc}")
 
-        print(f"{self.role} disconnected")
+        self.connected.get(
+            getattr(self, "role", ""),
+            set(),
+        ).discard(self.channel_name)
+
+        print(
+            f"{getattr(self, 'role', 'unknown')} disconnected "
+            f"(code={close_code})"
+        )
+
 
     async def receive(self, text_data):
         data = json.loads(text_data)
@@ -95,11 +116,10 @@ class ScreenConsumer(AsyncWebsocketConsumer):
         # Only admin can change live screen / trigger these actions
         if self.role != "admin":
             return
-<<<<<<< HEAD
 
-        if action == "set_live_screen":
-            await self.handle_set_live_screen(data)
-=======
+
+     
+
         
 
         if action == "set_live_screen":
@@ -107,7 +127,7 @@ class ScreenConsumer(AsyncWebsocketConsumer):
             
         elif action == "create_window":
             await self.handle_create_window(data)
->>>>>>> feature/window_manager
+
 
         elif action == "window_update":
             await self.handle_window_update(data)
@@ -144,9 +164,7 @@ class ScreenConsumer(AsyncWebsocketConsumer):
                         }
                     )
                 )
-<<<<<<< HEAD
 
-=======
         
         elif action == "toggle_online":
             
@@ -171,7 +189,6 @@ class ScreenConsumer(AsyncWebsocketConsumer):
             
                 
             
->>>>>>> feature/window_manager
     # ------------------------------------------------------------
     # Action handlers (kept separate from receive() for readability)
     # ------------------------------------------------------------
@@ -205,8 +222,6 @@ class ScreenConsumer(AsyncWebsocketConsumer):
         # Notify admins too (no init_data needed there)
         await self.channel_layer.group_send("screen_admin", base_payload)
 
-<<<<<<< HEAD
-=======
     async def handle_create_window(self,data):
         try:
             await self.channel_layer.group_send(
@@ -219,23 +234,22 @@ class ScreenConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             print(e)
         
->>>>>>> feature/window_manager
     async def handle_window_update(self, data):
         try:
+            screen_id = data.get("screen_id")
             properties = data.get("properties", {})
 
-            await self.getScreenProps(1, properties)
+            if not screen_id:
+                print("⚠ handle_window_update: no screen_id provided")
+                return
 
-            screen = await self.getScreenProps(1)
+            await self.getScreenProps(screen_id, properties)
+            screen = await self.getScreenProps(screen_id)
 
             await self.channel_layer.group_send(
                 "screen_client",
-                {
-                    "type": "window_update",
-                    "properties": screen,
-                },
+                {"type": "window_update", "properties": screen},
             )
-
         except Exception as e:
             print(e)
 
@@ -338,8 +352,6 @@ class ScreenConsumer(AsyncWebsocketConsumer):
                 }
             )
         )
-<<<<<<< HEAD
-=======
     async def add_window(self, event):
             await self.send(
                 text_data=json.dumps({
@@ -354,7 +366,6 @@ class ScreenConsumer(AsyncWebsocketConsumer):
                     "data": event.get("data"),
                 })
             )
->>>>>>> feature/window_manager
 
     async def free_text_updated(self, event):
         await self.send(
@@ -669,10 +680,8 @@ class ScreenConsumer(AsyncWebsocketConsumer):
             return AppTheme.get_active().to_payload()
         except Exception as e:
             print(f"⚠ getActiveThemePayload failed: {e}")
-<<<<<<< HEAD
             return None
-=======
-            return None
+ 
         
     @database_sync_to_async
     def getWindow(self,id):
@@ -693,4 +702,3 @@ class ScreenConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             print(f"Error in the getting window {e}")
         
->>>>>>> feature/window_manager
