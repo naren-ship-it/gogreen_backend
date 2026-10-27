@@ -58,3 +58,4 @@ for app_config in apps.get_app_configs():
 
 
 admin.site.register(AnimationDuration)
+admin.site.register(DCModbusReadControl)

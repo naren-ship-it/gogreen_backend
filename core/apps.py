@@ -1,5 +1,8 @@
 from django.apps import AppConfig
+from pathlib import Path
 
+from django.conf import settings
+from django.core.files import File
 
 class CoreAppConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
@@ -57,27 +60,112 @@ def create_app_theme(sender,**kwargs):
 def screen_lists(sender, **kwargs):
     from screen_controller.models import Screen
 
+    # Folder containing your original thumbnail images
+    thumbnail_dir = Path(settings.BASE_DIR) / "thumbnails"
+
     screens = [
-        {"name": "Default Screen", "path": "/", "is_live": True},
-        {"name": "Welcome Screen", "path": "/welcome", "is_live": False},
-        {"name": "Individual Ranking Screen", "path": "/individual", "is_live": False},
-        {"name": "Group Ranking Screen", "path": "/group-participants", "is_live": False},
-        {"name": "Line Graph Screen", "path": "/player-analysis", "is_live": False},
-        {"name": "Free Text Screen", "path": "/free-text", "is_live": False},
-        {"name": "Participent Screen", "path": "/participants", "is_live": False},
-        {"name": "Barchart Screen", "path": "/live-barchart", "is_live": False},
-        {"name": "Combined View", "path" :"/combined-view", "is_live": False},
-        {"name": "Leaders Screen", "path":"/participant-rank", "is_live": False},
+        {
+            "name": "Default Screen",
+            "path": "/",
+            "is_live": True,
+            "thumbnail": "01_default_screen.png",
+        },
+        {
+            "name": "Welcome Screen",
+            "path": "/welcome",
+            "is_live": False,
+            "thumbnail": "02_welcome_screen.png",
+        },
+        {
+            "name": "Individual Ranking Screen",
+            "path": "/individual",
+            "is_live": False,
+            "thumbnail": "03_individual_ranking.png",
+        },
+        {
+            "name": "Group Ranking Screen",
+            "path": "/group-participants",
+            "is_live": False,
+            "thumbnail": "04_group_ranking.png",
+        },
+        {
+            "name": "Line Graph Screen",
+            "path": "/player-analysis",
+            "is_live": False,
+            "thumbnail": "05_line_graph.png",
+        },
+        {
+            "name": "Free Text Screen",
+            "path": "/free-text",
+            "is_live": False,
+            "thumbnail": "06_free_text.png",
+        },
+        {
+            "name": "Participant Screen",
+            "path": "/participants",
+            "is_live": False,
+            "thumbnail": "07_participant.png",
+        },
+        {
+            "name": "Barchart Screen",
+            "path": "/live-barchart",
+            "is_live": False,
+            "thumbnail": "08_barchart.png",
+        },
+        {
+            "name": "Combined View",
+            "path": "/combined-view",
+            "is_live": False,
+            "thumbnail": "09_combined_view.png",
+        },
+        {
+            "name": "Leaders Screen",
+            "path": "/participant-rank",
+            "is_live": False,
+            "thumbnail": "10_leaders.png",
+        },
     ]
 
-    for i in screens:
-        Screen.objects.get_or_create(
-            path=i["path"],
+    for item in screens:
+        screen, created = Screen.objects.get_or_create(
+            path=item["path"],
             defaults={
-                "name": i["name"],
-                "is_live": i["is_live"],
+                "name": item["name"],
+                "is_live": item["is_live"],
             },
         )
+
+        # Set the thumbnail for new or existing screens
+        if not screen.thumbnail:
+            image_path = thumbnail_dir / item["thumbnail"]
+
+            if not image_path.exists():
+                print(f"Thumbnail not found: {image_path}")
+                continue
+
+            try:
+                with image_path.open("rb") as image_file:
+                    screen.thumbnail.save(
+                        image_path.name,
+                        File(image_file),
+                        save=False,
+                    )
+
+                screen.save(update_fields=["thumbnail"])
+
+                print(
+                    f"Thumbnail assigned: {screen.name} "
+                    f"-> {screen.thumbnail.name}"
+                )
+
+            except Exception as error:
+                print(
+                    f"Failed to assign thumbnail for "
+                    f"{screen.name}: {error}"
+                )
+
+        if created:
+            print(f"Screen created: {screen.name}")
 
 def screen_position(sender,**kwargs):
     from screen_controller.models import ScreenPosition

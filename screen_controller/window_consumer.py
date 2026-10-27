@@ -155,7 +155,11 @@ class WindowConsumer(AsyncWebsocketConsumer):
         elif action == "window_client_connected":
             await self.store_pid(data['window_id'],data['pid'])
             print(f"pid stored {data}")
-            
+        
+        elif action == "set_live_screen":
+            print(f"set_live_screen {data}")
+            await self.handle_set_live_screen(data)
+        
         elif action == "get_windows":
             windows = await self.get_windows()
 
@@ -384,7 +388,66 @@ class WindowConsumer(AsyncWebsocketConsumer):
     # --------------------------------------------------
     # CREATE WINDOW
     # --------------------------------------------------
+    async def handle_set_live_screen(self, data):
+        screen_id = self._parse_id(data.get("screen_id"))
+        
+        if screen_id is None:
+            await self.send_error("A valid screen_id is required.")
+            return
 
+
+       
+
+        try:
+            screen = await self.get_screen(screen_id)
+
+            if screen is None:
+                await self.send_error(
+                    f"Screen {screen_id} was not found."
+                )
+                return
+
+            # Build message using Django model attributes
+            message = {
+                "type": "set_live_screen",
+                "window_id": self.window_id,
+                "screen_id": screen.id,
+                "screen_name": screen.name,
+                "path": screen.path,
+            }
+            # Acknowledge the admin request
+            await self.send_json({
+                "type": "set_live_screen_ack",
+                "window_id": self.window_id,
+                "screen_id": screen.id,
+                "screen_name": screen.name,
+                "message": "Live screen request sent to the client.",
+            })
+
+            # Send event to client connections for this window
+            await self.channel_layer.group_send(
+                self.group_name,
+                {
+                    "type": "window_event",
+                    "data": message,
+                    "exclude_channel": self.channel_name,
+                },
+            )
+
+            print(
+                f"Admin -> Client | set_live_screen | "
+                f"window={self.window_id} | "
+                f"screen={screen.id} | "
+                f"path={screen.path}"
+            )
+
+        except Exception as error:
+            traceback.print_exc()
+
+            await self.send_error(
+                "Unable to send the live screen request."
+            )
+        
     async def handle_create_window(self, data):
         try:
             result = await self.create_window(
@@ -506,6 +569,17 @@ class WindowConsumer(AsyncWebsocketConsumer):
             self.serialize_window(window)
             for window in windows
         ]
+    
+    @database_sync_to_async
+    def get_screen(self,screen_id):
+        from .models import Screen
+        try:
+            screen = Screen.objects.get(id=screen_id)
+            return screen
+        except Exception as e:
+            print("Error While Getting Screen")
+            print(e)
+            return None
 
     # --------------------------------------------------
     # VALIDATION HELPERS

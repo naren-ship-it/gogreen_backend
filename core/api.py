@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import *
-from screen_controller.models import Screen
+from screen_controller.models import Screen,Windows
 from screen_controller.serializer import ScreenSerializer
 
 from django.db.models import F
@@ -22,6 +22,23 @@ class LastScreenAPIView(APIView):
     def get(self,request):
         try:
             screen = Screen.objects.get(is_live=True)
+            serializer = ScreenSerializer(screen)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Screen.DoesNotExist:
+            return Response({"error": "No live screen found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class ActiveScreenAPIView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = [] 
+    def get(self,request):
+        try:
+            id = request.query_params.get("id")
+            if not id:
+                return Response({"error": "Screen ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+            window = Windows.objects.get(id=id)
+            screen = Screen.objects.get(id=window.screen_id)
             serializer = ScreenSerializer(screen)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Screen.DoesNotExist:
@@ -344,3 +361,52 @@ def backend_terminal_logs(request):
             "lines": [],
             "error": "Unable to read backend log file.",
         }, status=500)
+        
+        
+        
+    
+
+class UpdateModeAPIView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        print(request.data)
+        try:
+            meter = request.data.get("meter")
+            mode = request.data.get("mode")
+            if not meter:
+                return Response({
+                    "status": False,
+                    "message": "Meter  is required.",
+                }, status=status.HTTP_400_BAD_REQUEST)
+          
+            data = None 
+            if meter == "AC":
+                ac = ACModbusReadControl.get_control()
+                
+                ac.read_enabled = mode
+                ac.save()
+                data = {
+                                    "read_enabled": ac.read_enabled,
+                                }
+            elif meter == "DC":
+                dc = DCModbusReadControl.get_control()
+                data = {
+                    "read_enabled": dc.read_enabled,
+                }
+                dc.read_enabled = mode
+                dc.save()
+            return Response({
+                "status": True,
+                "message": "Data saved successfully",
+                "data": data,
+            })
+
+        except Exception as e:
+            return Response({
+                "status": False,
+                "message": str(e),
+            })
+        
+            

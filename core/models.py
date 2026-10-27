@@ -474,3 +474,31 @@ class AnimationDuration(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
+
+# Create your models here.
+class DCModbusReadControl(models.Model):
+    read_enabled = models.BooleanField(default=False)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return "Modbus Read Enabled" if self.read_enabled else "Modbus Read Disabled"
+
+    @classmethod
+    def get_control(cls):
+        control, _ = cls.objects.get_or_create(pk=1)
+        return control
+    
+class ACModbusReadControl(models.Model):
+    read_enabled = models.BooleanField(default=False)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return "Modbus Read Enabled" if self.read_enabled else "Modbus Read Disabled"
+
+    @classmethod
+    def get_control(cls):
+        control, _ = cls.objects.get_or_create(pk=1)
+        return control
+    
